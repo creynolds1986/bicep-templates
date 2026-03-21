@@ -34,4 +34,6 @@ New-AzResourceGroupDeployment `
   -storageAccountSku 'Premium_LRS' `
   -fslogixProfileSizeGB 20 `
   -fslogixUserCount 4 `
+  -tagEnvironment 'lab' `   # Set to '' to deploy without tags
+  -tagProject 'avd' `       # Set to '' to deploy without tags
   -Verbose

@@ -334,6 +334,45 @@
             }
           }
         ]
+      },
+      {
+        "name": "tags",
+        "label": "Tags",
+        "subLabel": {
+          "preValidation": "Optionally configure resource tags",
+          "postValidation": "Done"
+        },
+        "elements": [
+          {
+            "name": "tagsInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "Tags are optional. Leave both fields blank to deploy without any tags."
+            }
+          },
+          {
+            "name": "tagEnvironment",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Environment tag",
+            "defaultValue": "lab",
+            "toolTip": "Value for the environment tag applied to all resources. Leave blank to skip.",
+            "constraints": {
+              "required": false
+            }
+          },
+          {
+            "name": "tagProject",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Project tag",
+            "defaultValue": "avd",
+            "toolTip": "Value for the project tag applied to all resources. Leave blank to skip.",
+            "constraints": {
+              "required": false
+            }
+          }
+        ]
       }
     ],
     "outputs": {
@@ -347,7 +386,9 @@
       "avdUsersGroupId": "[steps('identity').avdUsersGroupId]",
       "storageAccountSku": "[steps('fslogix').storageAccountSku]",
       "fslogixProfileSizeGB": "[steps('fslogix').fslogixProfileSizeGB]",
-      "fslogixUserCount": "[steps('fslogix').fslogixUserCount]"
+      "fslogixUserCount": "[steps('fslogix').fslogixUserCount]",
+      "tagEnvironment": "[steps('tags').tagEnvironment]",
+      "tagProject": "[steps('tags').tagProject]"
     }
   }
 }

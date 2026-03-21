@@ -44,10 +44,14 @@ param fslogixUserCount int = 4
 // Calculated share quota - total profile space with a 100 GB floor (Azure Files Premium minimum)
 var fslogixShareQuotaGB = max(fslogixProfileSizeGB * fslogixUserCount, 100)
 
-// Tags applied to every resource
-var tags = {
-  environment: 'lab'
-  project: 'avd'
+// Optional tags - leave as empty strings to deploy without tags
+param tagEnvironment string = 'lab'
+param tagProject string = 'avd'
+
+// Tags object - empty if both tag values are empty
+var tags = (empty(tagEnvironment) && empty(tagProject)) ? {} : {
+  environment: empty(tagEnvironment) ? null : tagEnvironment
+  project: empty(tagProject) ? null : tagProject
 }
 
 // =============================================================================

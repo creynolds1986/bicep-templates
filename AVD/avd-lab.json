@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "13086625080264129986"
+      "templateHash": "3015956248083506976"
     }
   },
   "parameters": {
@@ -61,14 +61,19 @@
       "metadata": {
         "description": "Number of users who will have FSLogix profiles"
       }
+    },
+    "tagEnvironment": {
+      "type": "string",
+      "defaultValue": "lab"
+    },
+    "tagProject": {
+      "type": "string",
+      "defaultValue": "avd"
     }
   },
   "variables": {
     "fslogixShareQuotaGB": "[max(mul(parameters('fslogixProfileSizeGB'), parameters('fslogixUserCount')), 100)]",
-    "tags": {
-      "environment": "lab",
-      "project": "avd"
-    },
+    "tags": "[if(and(empty(parameters('tagEnvironment')), empty(parameters('tagProject'))), createObject(), createObject('environment', if(empty(parameters('tagEnvironment')), null(), parameters('tagEnvironment')), 'project', if(empty(parameters('tagProject')), null(), parameters('tagProject'))))]",
     "storageSmbContributorRoleId": "0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb",
     "storageSmbElevatedContributorRoleId": "a7264617-510b-434b-a828-9731dc254ea7",
     "registrationTokenExpiry": "[dateTimeAdd(parameters('baseTime'), 'PT24H')]",

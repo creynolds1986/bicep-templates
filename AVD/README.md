@@ -90,6 +90,8 @@ The following parameters are optional and have sensible defaults:
 | `storageAccountSku` | `Premium_LRS` | Storage redundancy — use `Premium_ZRS` for zone redundancy |
 | `fslogixProfileSizeGB` | `20` | Maximum size of each user's FSLogix profile VHDX in GB |
 | `fslogixUserCount` | `4` | Number of users — used to calculate the file share quota |
+| `tagEnvironment` | `lab` | Value for the environment tag on all resources — set to `''` to deploy without tags |
+| `tagProject` | `avd` | Value for the project tag on all resources — set to `''` to deploy without tags |
 
 ### 3. Connect to Azure
 
