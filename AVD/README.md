@@ -2,7 +2,7 @@
 
 A fully automated Azure Virtual Desktop environment deployable either from the **Azure Portal** (wizard UI) or via **PowerShell** (code). Built as a portfolio piece to demonstrate end-to-end AVD infrastructure as code.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftheloneginger%2Favd-lab-bicep%2Fmain%2Favd-lab.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Ftheloneginger%2Favd-lab-bicep%2Fmain%2FcreateUiDefinition.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD%2Favd-lab.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD%2FcreateUiDefinition.json)
 
 ---
 
@@ -65,7 +65,7 @@ Click the **Deploy to Azure** button at the top of this page. This opens a multi
 ### 1. Clone the repository
 
 ```powershell
-git clone https://github.com/theloneginger/avd-lab-bicep.git
+git clone https://github.com/creynolds1986/bicep-templates.git
 cd avd-lab-bicep
 ```
 
@@ -95,7 +95,7 @@ The following parameters are optional and have sensible defaults:
 
 ```powershell
 Connect-AzAccount
-Set-AzContext '<your-subscription-id>'
+Set-AzContext -Subscription '<your-subscription-id>'
 ```
 
 ### 4. Run the deployment script
