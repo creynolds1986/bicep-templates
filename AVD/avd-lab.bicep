@@ -48,11 +48,11 @@ var fslogixShareQuotaGB = max(fslogixProfileSizeGB * fslogixUserCount, 100)
 param tagEnvironment string = 'lab'
 param tagProject string = 'avd'
 
-// Tags object - empty if both tag values are empty
-var tags = (empty(tagEnvironment) && empty(tagProject)) ? {} : {
-  environment: empty(tagEnvironment) ? null : tagEnvironment
-  project: empty(tagProject) ? null : tagProject
-}
+// Tags object - only includes tags where a value has been provided
+var tags = union(
+  empty(tagEnvironment) ? {} : { environment: tagEnvironment },
+  empty(tagProject) ? {} : { project: tagProject }
+)
 
 // =============================================================================
 // NETWORKING

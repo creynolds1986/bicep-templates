@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "3015956248083506976"
+      "templateHash": "11441889000900843548"
     }
   },
   "parameters": {
@@ -73,7 +73,7 @@
   },
   "variables": {
     "fslogixShareQuotaGB": "[max(mul(parameters('fslogixProfileSizeGB'), parameters('fslogixUserCount')), 100)]",
-    "tags": "[if(and(empty(parameters('tagEnvironment')), empty(parameters('tagProject'))), createObject(), createObject('environment', if(empty(parameters('tagEnvironment')), null(), parameters('tagEnvironment')), 'project', if(empty(parameters('tagProject')), null(), parameters('tagProject'))))]",
+    "tags": "[union(if(empty(parameters('tagEnvironment')), createObject(), createObject('environment', parameters('tagEnvironment'))), if(empty(parameters('tagProject')), createObject(), createObject('project', parameters('tagProject'))))]",
     "storageSmbContributorRoleId": "0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb",
     "storageSmbElevatedContributorRoleId": "a7264617-510b-434b-a828-9731dc254ea7",
     "registrationTokenExpiry": "[dateTimeAdd(parameters('baseTime'), 'PT24H')]",
