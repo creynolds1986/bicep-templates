@@ -36,4 +36,8 @@ New-AzResourceGroupDeployment `
   -fslogixUserCount 4 `
   -tagEnvironment 'lab' `   # Set to '' to deploy without tags
   -tagProject 'avd' `       # Set to '' to deploy without tags
+  -enableMonitoring $false `         # Set to $true to deploy Log Analytics, AVD Insights and alerts
+  -logAnalyticsWorkspaceName 'avd-lab-law' ` # Only used if enableMonitoring is $true
+  -logRetentionDays 30 `             # Only used if enableMonitoring is $true
+  -alertEmailAddress '' `            # Set to your email to receive alerts - leave blank to skip
   -Verbose

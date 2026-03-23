@@ -22,6 +22,10 @@ A fully automated Azure Virtual Desktop environment deployable either from the *
 | Workspace | Linked to App Group |
 | Session Hosts | Configurable number of VMs, Trusted Launch, no public IP |
 | RBAC | AVD Users granted Desktop Virtualization User + VM User Login + FSLogix SMB roles |
+| Log Analytics Workspace | Optional — central store for all AVD and resource logs |
+| AVD Insights | Optional — session host health, connection reliability, user experience |
+| Diagnostic Settings | Optional — logs from Host Pool, Workspace, App Group, Storage and VMs |
+| Alerts | Optional — session host unavailable and FSLogix mount failure alerts |
 
 ---
 
@@ -92,6 +96,10 @@ The following parameters are optional and have sensible defaults:
 | `fslogixUserCount` | `4` | Number of users — used to calculate the file share quota |
 | `tagEnvironment` | `lab` | Value for the environment tag on all resources — set to `''` to deploy without tags |
 | `tagProject` | `avd` | Value for the project tag on all resources — set to `''` to deploy without tags |
+| `enableMonitoring` | `false` | Set to `true` to deploy Log Analytics, AVD Insights, diagnostic settings and alerts |
+| `logAnalyticsWorkspaceName` | `avd-lab-law` | Name for the Log Analytics workspace — only used if `enableMonitoring` is `true` |
+| `logRetentionDays` | `30` | Log retention in days — allowed values: 30, 60, 90, 180, 365 |
+| `alertEmailAddress` | `''` | Email address for alert notifications — leave blank to skip alerts |
 
 ### 3. Connect to Azure
 

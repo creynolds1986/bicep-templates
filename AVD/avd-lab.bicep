@@ -54,6 +54,20 @@ var tags = union(
   empty(tagProject) ? {} : { project: tagProject }
 )
 
+// Monitoring
+@description('Enable Azure Monitor, Log Analytics and AVD Insights')
+param enableMonitoring bool = false
+
+@description('Name for the Log Analytics workspace')
+param logAnalyticsWorkspaceName string = '${prefix}-law'
+
+@description('Number of days to retain logs in the workspace')
+@allowed([30, 60, 90, 180, 365])
+param logRetentionDays int = 30
+
+@description('Email address for alert notifications - leave blank to skip alerts')
+param alertEmailAddress string = ''
+
 // =============================================================================
 // NETWORKING
 // =============================================================================
@@ -657,6 +671,190 @@ resource fslogixConfigRunCommand 'Microsoft.Compute/virtualMachines/runCommands@
   }
 }]
 
+
+// =============================================================================
+// MONITORING (optional - enabled via enableMonitoring parameter)
+// =============================================================================
+
+// 19. Log Analytics Workspace
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = if (enableMonitoring) {
+  name: logAnalyticsWorkspaceName
+  location: location
+  tags: tags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: logRetentionDays
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+  }
+}
+
+// 20. Diagnostic settings - Host Pool
+resource hostPoolDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableMonitoring) {
+  name: '${prefix}-hp-diag'
+  scope: hostPool
+  properties: {
+    workspaceId: enableMonitoring ? logAnalyticsWorkspace.id : null
+    logs: [
+      { category: 'Checkpoint',       enabled: true }
+      { category: 'Error',            enabled: true }
+      { category: 'Management',       enabled: true }
+      { category: 'Connection',       enabled: true }
+      { category: 'HostRegistration', enabled: true }
+      { category: 'AgentHealthStatus',enabled: true }
+    ]
+  }
+}
+
+// 21. Diagnostic settings - Workspace
+resource workspaceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableMonitoring) {
+  name: '${prefix}-ws-diag'
+  scope: workspace
+  properties: {
+    workspaceId: enableMonitoring ? logAnalyticsWorkspace.id : null
+    logs: [
+      { category: 'Checkpoint', enabled: true }
+      { category: 'Error',      enabled: true }
+      { category: 'Management', enabled: true }
+      { category: 'Feed',       enabled: true }
+    ]
+  }
+}
+
+// 22. Diagnostic settings - App Group
+resource appGroupDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableMonitoring) {
+  name: '${prefix}-dag-diag'
+  scope: appGroup
+  properties: {
+    workspaceId: enableMonitoring ? logAnalyticsWorkspace.id : null
+    logs: [
+      { category: 'Checkpoint', enabled: true }
+      { category: 'Error',      enabled: true }
+      { category: 'Management', enabled: true }
+    ]
+  }
+}
+
+// 23. Diagnostic settings - Storage Account
+resource storageAccountDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableMonitoring) {
+  name: '${prefix}-sa-diag'
+  scope: storageAccount
+  properties: {
+    workspaceId: enableMonitoring ? logAnalyticsWorkspace.id : null
+    metrics: [
+      { category: 'Transaction', enabled: true }
+      { category: 'Capacity',    enabled: true }
+    ]
+  }
+}
+
+// 24. VM diagnostic settings and AVD Insights data collection
+//     Configures performance counters and event logs required by AVD Insights
+resource vmDiagnosticsExtension 'Microsoft.Compute/virtualMachines/extensions@2023-09-01' = [for i in range(0, vmCount): if (enableMonitoring) {
+  name: '${prefix}-vm-${i}/MicrosoftMonitoringAgent'
+  location: location
+  tags: tags
+  dependsOn: [ sessionHosts ]
+  properties: {
+    publisher: 'Microsoft.EnterpriseCloud.Monitoring'
+    type: 'MicrosoftMonitoringAgent'
+    typeHandlerVersion: '1.0'
+    autoUpgradeMinorVersion: true
+    settings: {
+      workspaceId: enableMonitoring ? logAnalyticsWorkspace.properties.customerId : null
+    }
+    protectedSettings: {
+      workspaceKey: enableMonitoring ? logAnalyticsWorkspace.listKeys().primarySharedKey : null
+    }
+  }
+}]
+
+// 25. Action group for alerts (only if email address provided)
+resource alertActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = if (enableMonitoring && !empty(alertEmailAddress)) {
+  name: '${prefix}-ag'
+  location: 'global'
+  tags: tags
+  properties: {
+    groupShortName: 'AVDAlerts'
+    enabled: true
+    emailReceivers: [
+      {
+        name: 'AVD Admin'
+        emailAddress: alertEmailAddress
+        useCommonAlertSchema: true
+      }
+    ]
+  }
+}
+
+// 26. Alert - Session host unavailable
+resource sessionHostUnavailableAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = if (enableMonitoring) {
+  name: '${prefix}-alert-host-unavailable'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'AVD Session Host Unavailable'
+    description: 'Alerts when a session host reports as unavailable'
+    severity: 2
+    enabled: true
+    scopes: [ enableMonitoring ? logAnalyticsWorkspace.id : resourceGroup().id ]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      allOf: [
+        {
+          query: 'WVDAgentHealthStatus | where Status != "Available" | summarize count() by SessionHostName'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: {
+      actionGroups: (enableMonitoring && !empty(alertEmailAddress)) ? [ alertActionGroup.id ] : []
+    }
+  }
+}
+
+// 27. Alert - FSLogix profile mount failure
+resource fslogixMountFailureAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = if (enableMonitoring) {
+  name: '${prefix}-alert-fslogix-failure'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'AVD FSLogix Profile Mount Failure'
+    description: 'Alerts when FSLogix fails to mount a user profile'
+    severity: 2
+    enabled: true
+    scopes: [ enableMonitoring ? logAnalyticsWorkspace.id : resourceGroup().id ]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    criteria: {
+      allOf: [
+        {
+          query: 'Event | where EventLog == "Microsoft-FSLogix-Apps/Operational" | where EventLevelName == "Error" | summarize count() by Computer'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    actions: {
+      actionGroups: (enableMonitoring && !empty(alertEmailAddress)) ? [ alertActionGroup.id ] : []
+    }
+  }
+}
+
 // =============================================================================
 // OUTPUTS
 // =============================================================================
@@ -669,3 +867,4 @@ output fslogixSharePath string = '\\\\${storageAccount.name}.file.${environment(
 output hostPoolName string = hostPool.name
 output workspaceName string = workspace.name
 output appGroupName string = appGroup.name
+output logAnalyticsWorkspaceId string = enableMonitoring ? logAnalyticsWorkspace.id : ''

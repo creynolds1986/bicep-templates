@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "11441889000900843548"
+      "templateHash": "1439329617424495622"
     }
   },
   "parameters": {
@@ -69,6 +69,41 @@
     "tagProject": {
       "type": "string",
       "defaultValue": "avd"
+    },
+    "enableMonitoring": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable Azure Monitor, Log Analytics and AVD Insights"
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "[format('{0}-law', parameters('prefix'))]",
+      "metadata": {
+        "description": "Name for the Log Analytics workspace"
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "allowedValues": [
+        30,
+        60,
+        90,
+        180,
+        365
+      ],
+      "metadata": {
+        "description": "Number of days to retain logs in the workspace"
+      }
+    },
+    "alertEmailAddress": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Email address for alert notifications - leave blank to skip alerts"
+      }
     }
   },
   "variables": {
@@ -662,6 +697,273 @@
         "avdAgentExtension",
         "[resourceId('Microsoft.Storage/storageAccounts', format('{0}sa{1}', replace(parameters('prefix'), '-', ''), uniqueString(resourceGroup().id)))]"
       ]
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": "[parameters('logRetentionDays')]",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-hp', parameters('prefix')))]",
+      "name": "[format('{0}-hp-diag', parameters('prefix'))]",
+      "properties": {
+        "workspaceId": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), null())]",
+        "logs": [
+          {
+            "category": "Checkpoint",
+            "enabled": true
+          },
+          {
+            "category": "Error",
+            "enabled": true
+          },
+          {
+            "category": "Management",
+            "enabled": true
+          },
+          {
+            "category": "Connection",
+            "enabled": true
+          },
+          {
+            "category": "HostRegistration",
+            "enabled": true
+          },
+          {
+            "category": "AgentHealthStatus",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-hp', parameters('prefix')))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[resourceId('Microsoft.DesktopVirtualization/workspaces', format('{0}-ws', parameters('prefix')))]",
+      "name": "[format('{0}-ws-diag', parameters('prefix'))]",
+      "properties": {
+        "workspaceId": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), null())]",
+        "logs": [
+          {
+            "category": "Checkpoint",
+            "enabled": true
+          },
+          {
+            "category": "Error",
+            "enabled": true
+          },
+          {
+            "category": "Management",
+            "enabled": true
+          },
+          {
+            "category": "Feed",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]",
+        "[resourceId('Microsoft.DesktopVirtualization/workspaces', format('{0}-ws', parameters('prefix')))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-dag', parameters('prefix')))]",
+      "name": "[format('{0}-dag-diag', parameters('prefix'))]",
+      "properties": {
+        "workspaceId": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), null())]",
+        "logs": [
+          {
+            "category": "Checkpoint",
+            "enabled": true
+          },
+          {
+            "category": "Error",
+            "enabled": true
+          },
+          {
+            "category": "Management",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-dag', parameters('prefix')))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', format('{0}sa{1}', replace(parameters('prefix'), '-', ''), uniqueString(resourceGroup().id)))]",
+      "name": "[format('{0}-sa-diag', parameters('prefix'))]",
+      "properties": {
+        "workspaceId": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), null())]",
+        "metrics": [
+          {
+            "category": "Transaction",
+            "enabled": true
+          },
+          {
+            "category": "Capacity",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('{0}sa{1}', replace(parameters('prefix'), '-', ''), uniqueString(resourceGroup().id)))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "vmDiagnosticsExtension",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2023-09-01",
+      "name": "[format('{0}-vm-{1}/MicrosoftMonitoringAgent', parameters('prefix'), range(0, parameters('vmCount'))[copyIndex()])]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+        "type": "MicrosoftMonitoringAgent",
+        "typeHandlerVersion": "1.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "workspaceId": "[if(parameters('enableMonitoring'), reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').customerId, null())]"
+        },
+        "protectedSettings": {
+          "workspaceKey": "[if(parameters('enableMonitoring'), listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').primarySharedKey, null())]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]",
+        "sessionHosts"
+      ]
+    },
+    {
+      "condition": "[and(parameters('enableMonitoring'), not(empty(parameters('alertEmailAddress'))))]",
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}-ag', parameters('prefix'))]",
+      "location": "global",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "groupShortName": "AVDAlerts",
+        "enabled": true,
+        "emailReceivers": [
+          {
+            "name": "AVD Admin",
+            "emailAddress": "[parameters('alertEmailAddress')]",
+            "useCommonAlertSchema": true
+          }
+        ]
+      }
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2022-06-15",
+      "name": "[format('{0}-alert-host-unavailable', parameters('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "displayName": "AVD Session Host Unavailable",
+        "description": "Alerts when a session host reports as unavailable",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), resourceGroup().id)]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "WVDAgentHealthStatus | where Status != \"Available\" | summarize count() by SessionHostName",
+              "timeAggregation": "Count",
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": "[if(and(parameters('enableMonitoring'), not(empty(parameters('alertEmailAddress')))), createArray(resourceId('Microsoft.Insights/actionGroups', format('{0}-ag', parameters('prefix')))), createArray())]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', format('{0}-ag', parameters('prefix')))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableMonitoring')]",
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2022-06-15",
+      "name": "[format('{0}-alert-fslogix-failure', parameters('prefix'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "displayName": "AVD FSLogix Profile Mount Failure",
+        "description": "Alerts when FSLogix fails to mount a user profile",
+        "severity": 2,
+        "enabled": true,
+        "scopes": [
+          "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), resourceGroup().id)]"
+        ],
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "Event | where EventLog == \"Microsoft-FSLogix-Apps/Operational\" | where EventLevelName == \"Error\" | summarize count() by Computer",
+              "timeAggregation": "Count",
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": "[if(and(parameters('enableMonitoring'), not(empty(parameters('alertEmailAddress')))), createArray(resourceId('Microsoft.Insights/actionGroups', format('{0}-ag', parameters('prefix')))), createArray())]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/actionGroups', format('{0}-ag', parameters('prefix')))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ]
     }
   ],
   "outputs": {
@@ -696,6 +998,10 @@
     "appGroupName": {
       "type": "string",
       "value": "[format('{0}-dag', parameters('prefix'))]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[if(parameters('enableMonitoring'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '')]"
     }
   }
 }

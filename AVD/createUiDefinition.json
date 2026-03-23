@@ -336,6 +336,102 @@
         ]
       },
       {
+        "name": "monitoring",
+        "label": "Monitoring",
+        "subLabel": {
+          "preValidation": "Optionally configure monitoring",
+          "postValidation": "Done"
+        },
+        "elements": [
+          {
+            "name": "monitoringInfo",
+            "type": "Microsoft.Common.InfoBox",
+            "visible": true,
+            "options": {
+              "icon": "Info",
+              "text": "When enabled, deploys a Log Analytics workspace, AVD Insights configuration, diagnostic settings for all resources, and optional email alerts for session host and FSLogix failures."
+            }
+          },
+          {
+            "name": "enableMonitoring",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Enable monitoring",
+            "defaultValue": "No",
+            "toolTip": "Deploy Log Analytics workspace, AVD Insights and alerts.",
+            "constraints": {
+              "required": true,
+              "allowedValues": [
+                {
+                  "label": "Yes",
+                  "value": true
+                },
+                {
+                  "label": "No",
+                  "value": false
+                }
+              ]
+            }
+          },
+          {
+            "name": "logAnalyticsWorkspaceName",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Log Analytics workspace name",
+            "defaultValue": "avd-lab-law",
+            "toolTip": "Name for the Log Analytics workspace.",
+            "visible": "[steps('monitoring').enableMonitoring]",
+            "constraints": {
+              "required": false
+            }
+          },
+          {
+            "name": "logRetentionDays",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Log retention (days)",
+            "defaultValue": "30 days",
+            "toolTip": "How long to retain logs in the workspace.",
+            "visible": "[steps('monitoring').enableMonitoring]",
+            "constraints": {
+              "required": false,
+              "allowedValues": [
+                {
+                  "label": "30 days (minimum)",
+                  "value": 30
+                },
+                {
+                  "label": "60 days",
+                  "value": 60
+                },
+                {
+                  "label": "90 days",
+                  "value": 90
+                },
+                {
+                  "label": "180 days",
+                  "value": 180
+                },
+                {
+                  "label": "365 days",
+                  "value": 365
+                }
+              ]
+            }
+          },
+          {
+            "name": "alertEmailAddress",
+            "type": "Microsoft.Common.TextBox",
+            "label": "Alert email address",
+            "defaultValue": "",
+            "toolTip": "Email address for alert notifications. Leave blank to skip alerts.",
+            "visible": "[steps('monitoring').enableMonitoring]",
+            "constraints": {
+              "required": false,
+              "regex": "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+              "validationMessage": "Must be a valid email address or leave blank."
+            }
+          }
+        ]
+      },
+      {
         "name": "tags",
         "label": "Tags",
         "subLabel": {
@@ -388,7 +484,11 @@
       "fslogixProfileSizeGB": "[steps('fslogix').fslogixProfileSizeGB]",
       "fslogixUserCount": "[steps('fslogix').fslogixUserCount]",
       "tagEnvironment": "[steps('tags').tagEnvironment]",
-      "tagProject": "[steps('tags').tagProject]"
+      "tagProject": "[steps('tags').tagProject]",
+      "enableMonitoring": "[steps('monitoring').enableMonitoring]",
+      "logAnalyticsWorkspaceName": "[steps('monitoring').logAnalyticsWorkspaceName]",
+      "logRetentionDays": "[steps('monitoring').logRetentionDays]",
+      "alertEmailAddress": "[steps('monitoring').alertEmailAddress]"
     }
   }
 }
