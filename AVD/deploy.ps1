@@ -1,14 +1,37 @@
 # AVD Lab - PowerShell Deployment Script
 # Run this script from the folder containing avd-lab.bicep
 
-# Connect to Azure (comment out if already connected)
+# -----------------------------------------------
+# Configuration - fill in your values here
+# -----------------------------------------------
+
+$resourceGroupName         = 'AVDLab'
+$location                  = 'uksouth'
+$prefix                    = 'avd-lab'
+$goldenImageId             = '/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Compute/images/<image-name>'
+$vmAdminUsername           = 'avdadmin'
+$avdUsersGroupId           = '<object-id-of-avd-users-group>'
+$vmSize                    = 'Standard_D2as_v6'
+$vmCount                   = 2
+$storageAccountSku         = 'Premium_LRS'
+$fslogixProfileSizeGB      = 20
+$fslogixUserCount          = 4
+$tagEnvironment            = 'lab'    # Set to '' to deploy without tags
+$tagProject                = 'avd'   # Set to '' to deploy without tags
+$enableMonitoring          = $false   # Set to $true to deploy Log Analytics, AVD Insights and alerts
+$logAnalyticsWorkspaceName = 'avd-lab-law'
+$logRetentionDays          = 30       # Allowed values: 30, 60, 90, 180, 365
+$alertEmailAddress         = ''       # Set to your email to receive alerts - leave blank to skip
+
+# -----------------------------------------------
+# Connect to Azure (uncomment if needed)
+# -----------------------------------------------
 # Connect-AzAccount
 # Set-AzContext -Subscription '<your-subscription-id>'
 
+# -----------------------------------------------
 # Create resource group if it doesn't exist
-$resourceGroupName = 'AVDLab'
-$location = 'uksouth'
-
+# -----------------------------------------------
 if (-not (Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue)) {
     New-AzResourceGroup -Name $resourceGroupName -Location $location
     Write-Output "Resource group $resourceGroupName created"
@@ -16,28 +39,29 @@ if (-not (Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyCont
     Write-Output "Resource group $resourceGroupName already exists"
 }
 
-# Prompt for VM admin password securely
+# -----------------------------------------------
+# Deploy
+# -----------------------------------------------
 $securePassword = Read-Host -Prompt 'VM Admin Password' -AsSecureString
 
-# Deploy
 New-AzResourceGroupDeployment `
   -ResourceGroupName $resourceGroupName `
   -TemplateFile '.\avd-lab.bicep' `
   -location $location `
-  -prefix 'avd-lab' `
-  -goldenImageId '/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Compute/images/<image-name>' `
-  -vmAdminUsername 'avdadmin' `
+  -prefix $prefix `
+  -goldenImageId $goldenImageId `
+  -vmAdminUsername $vmAdminUsername `
   -vmAdminPassword $securePassword `
-  -avdUsersGroupId '<object-id-of-avd-users-group>' `
-  -vmSize 'Standard_D2as_v6' `
-  -vmCount 2 `
-  -storageAccountSku 'Premium_LRS' `
-  -fslogixProfileSizeGB 20 `
-  -fslogixUserCount 4 `
-  -tagEnvironment 'lab' `   # Set to '' to deploy without tags
-  -tagProject 'avd' `       # Set to '' to deploy without tags
-  -enableMonitoring $false `         # Set to $true to deploy Log Analytics, AVD Insights and alerts
-  -logAnalyticsWorkspaceName 'avd-lab-law' ` # Only used if enableMonitoring is $true
-  -logRetentionDays 30 `             # Only used if enableMonitoring is $true
-  -alertEmailAddress '' `            # Set to your email to receive alerts - leave blank to skip
+  -avdUsersGroupId $avdUsersGroupId `
+  -vmSize $vmSize `
+  -vmCount $vmCount `
+  -storageAccountSku $storageAccountSku `
+  -fslogixProfileSizeGB $fslogixProfileSizeGB `
+  -fslogixUserCount $fslogixUserCount `
+  -tagEnvironment $tagEnvironment `
+  -tagProject $tagProject `
+  -enableMonitoring $enableMonitoring `
+  -logAnalyticsWorkspaceName $logAnalyticsWorkspaceName `
+  -logRetentionDays $logRetentionDays `
+  -alertEmailAddress $alertEmailAddress `
   -Verbose
