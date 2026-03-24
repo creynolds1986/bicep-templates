@@ -763,10 +763,10 @@ resource vmDiagnosticsExtension 'Microsoft.Compute/virtualMachines/extensions@20
     typeHandlerVersion: '1.0'
     autoUpgradeMinorVersion: true
     settings: {
-      workspaceId: enableMonitoring ? logAnalyticsWorkspace.properties.customerId : null
+      workspaceId: enableMonitoring ? logAnalyticsWorkspace!.properties.customerId : ''
     }
     protectedSettings: {
-      workspaceKey: enableMonitoring ? logAnalyticsWorkspace.listKeys().primarySharedKey : null
+      workspaceKey: enableMonitoring ? logAnalyticsWorkspace!.listKeys().primarySharedKey : ''
     }
   }
 }]

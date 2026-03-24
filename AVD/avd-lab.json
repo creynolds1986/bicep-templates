@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "1439329617424495622"
+      "templateHash": "7821528547641409605"
     }
   },
   "parameters": {
@@ -855,10 +855,10 @@
         "typeHandlerVersion": "1.0",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "workspaceId": "[if(parameters('enableMonitoring'), reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').customerId, null())]"
+          "workspaceId": "[if(parameters('enableMonitoring'), reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').customerId, '')]"
         },
         "protectedSettings": {
-          "workspaceKey": "[if(parameters('enableMonitoring'), listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').primarySharedKey, null())]"
+          "workspaceKey": "[if(parameters('enableMonitoring'), listKeys(resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').primarySharedKey, '')]"
         }
       },
       "dependsOn": [
