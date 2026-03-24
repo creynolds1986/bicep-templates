@@ -639,6 +639,13 @@ resource fslogixConfigRunCommand 'Microsoft.Compute/virtualMachines/runCommands@
           Write-Output ('Intune enrolment failed but continuing: ' + $_.Exception.Message)
         }
 
+        # ---- Suppress Entra ID 'Allow Remote Desktop' consent prompt ----
+        $RdpPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
+        New-Item -Path $RdpPath -Force | Out-Null
+        Set-ItemProperty -Path $RdpPath -Name 'fAllowUnsolicited' -Value 1 -Type DWord
+        Set-ItemProperty -Path $RdpPath -Name 'fAllowUnsolicitedFullControl' -Value 1 -Type DWord
+        Write-Output 'Remote Desktop consent prompt suppressed'
+
         # ---- Verify ----
         $written = Get-ItemProperty -Path $RegPath
         Write-Output ('FSLogix configuration complete. VHDLocations set to: ' + $written.VHDLocations)
