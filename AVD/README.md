@@ -41,7 +41,7 @@ This deployment uses **storage account key authentication** for FSLogix profile 
 
 Before deploying, ensure you have:
 
-1. **A golden VM image** — either a Managed Image or a Shared Image Gallery version in the same subscription. It is recommended to install FSLogix into the golden image before capturing it as this saves deployment time — however it is not required as the deployment will automatically download and install FSLogix if it is not detected on the VM
+1. **A golden VM image** — optional. Leave `goldenImageId` blank to use the latest **Windows 11 25H2 AVD** marketplace image directly, which is the recommended approach. Alternatively supply a Managed Image or Shared Image Gallery version resource ID to use a custom image. If using a custom image, FSLogix will be installed automatically if not already present
 2. **AVD Users** — an Entra ID security group containing your AVD users
 3. **AVD Devices** — an Entra ID security group for Intune policy targeting (no action needed at deploy time)
 
@@ -79,7 +79,7 @@ Open `deploy.ps1` and fill in your values. The following parameters are required
 
 | Parameter | Description |
 |---|---|
-| `goldenImageId` | Full resource ID of your Managed Image or Shared Image Gallery version |
+| `goldenImageId` | Full resource ID of your Managed Image or SIG version — leave blank to use the latest Windows 11 25H2 AVD marketplace image |
 | `avdUsersGroupId` | Object ID of your AVD Users Entra ID security group |
 
 The following parameters are optional and have sensible defaults:
@@ -90,6 +90,7 @@ The following parameters are optional and have sensible defaults:
 | `location` | `uksouth` | Azure region to deploy into |
 | `vmCount` | `2` | Number of session host VMs to deploy |
 | `vmSize` | `Standard_D2as_v6` | Size of each session host VM |
+| `vmSecurityType` | `TrustedLaunch` | Must match your golden image — use `Standard` if built on a standard VM |
 | `vmAdminUsername` | `avdadmin` | Local admin username on each session host |
 | `storageAccountSku` | `Premium_LRS` | Storage redundancy — use `Premium_ZRS` for zone redundancy |
 | `fslogixProfileSizeGB` | `20` | Maximum size of each user's FSLogix profile VHDX in GB |

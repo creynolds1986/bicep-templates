@@ -12,8 +12,8 @@
 param location string = resourceGroup().location
 param prefix string = 'avd-lab'
 
-// Golden image - supply EITHER a managed image resource ID OR a SIG image version ID
-param goldenImageId string
+// Golden image - supply a Managed Image or SIG version resource ID, or leave blank to use the latest Windows 11 25H2 AVD marketplace image
+param goldenImageId string = ''
 
 // Local admin on the session hosts (password passed at deploy time - never hard-code)
 param vmAdminUsername string = 'avdadmin'
@@ -29,6 +29,12 @@ param avdUsersGroupId string
 // VM sizing
 param vmSize string = 'Standard_D4s_v5'
 param vmCount int = 2
+
+// VM security type - must match the security type of your golden image
+// Use 'TrustedLaunch' for images built on Trusted Launch VMs
+// Use 'Standard' for images built on standard VMs
+@allowed(['TrustedLaunch', 'Standard'])
+param vmSecurityType string = 'TrustedLaunch'
 
 // Storage
 param storageAccountSku string = 'Premium_LRS'  // Required for Azure Files Premium (v2)
@@ -332,28 +338,37 @@ resource fslogixElevatedRbac 'Microsoft.Authorization/roleAssignments@2022-04-01
 // 12. Host Pool (Pooled, BreadthFirst, with registration token valid 24 h)
 var registrationTokenExpiry = dateTimeAdd(baseTime, 'PT24H')
 
-resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2023-09-05' = {
+resource hostPool 'Microsoft.DesktopVirtualization/hostPools@2025-11-01-preview' = {
   name: '${prefix}-hp'
   location: location
   tags: tags
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     hostPoolType: 'Pooled'
     loadBalancerType: 'BreadthFirst'
     maxSessionLimit: 10
     preferredAppGroupType: 'Desktop'
-    customRdpProperty: 'enablerdsaadauth:i:1;targetisaadjoined:i:1;drivestoredirect:s:;'
+    customRdpProperty: 'drivestoredirect:s:;usbdevicestoredirect:s:;redirectclipboard:i:1;redirectprinters:i:0;audiomode:i:2;videoplaybackmode:i:1;devicestoredirect:s:*;redirectcomports:i:1;redirectsmartcards:i:1;enablecredsspsupport:i:1;redirectwebauthn:i:1;use multimon:i:1;targetisaadjoined:i:1;enablerdsaadauth:i:1;audiocapturemode:i:0;encode redirected video capture:i:0;'
     startVMOnConnect: true
+    allowRDPShortPathWithPrivateLink: 'Disabled'
+    publicNetworkAccess: 'Enabled'
+    managedPrivateUDP: 'Default'
+    directUDP: 'Default'
+    publicUDP: 'Default'
+    relayUDP: 'Default'
+    validationEnvironment: false
     registrationInfo: {
       expirationTime: registrationTokenExpiry
       registrationTokenOperation: 'Update'
     }
-    // Entra ID join + Intune enrollment flags
-    vmTemplate: '{"domain":"","galleryImageOffer":null,"galleryImagePublisher":null,"galleryImageSKU":null,"imageType":"CustomImage","imageUri":null,"customImageId":"${goldenImageId}","namePrefix":"${prefix}-vm","osDiskType":"Premium_LRS","vmSize":{"id":"${vmSize}","cores":4,"ram":16},"galleryItemId":null,"hibernate":false,"diskSizeGB":0,"securityType":"trustedLaunch","secureBoot":true,"vTPM":true}'
+    vmTemplate: '{"namePrefix":"${prefix}-vm","hibernate":false,"osDiskType":"StandardSSD_LRS","diskSizeGB":128,"securityType":"${vmSecurityType == 'TrustedLaunch' ? 'TrustedLaunch' : 'Standard'}","secureBoot":${vmSecurityType == 'TrustedLaunch' ? 'true' : 'false'},"vTPM":${vmSecurityType == 'TrustedLaunch' ? 'true' : 'false'},"vmInfrastructureType":"Cloud"}'
   }
 }
 
 // 13. Desktop Application Group
-resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2023-09-05' = {
+resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2025-11-01-preview' = {
   name: '${prefix}-dag'
   location: location
   tags: tags
@@ -365,12 +380,13 @@ resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2023-09-05'
 }
 
 // 14. Workspace
-resource workspace 'Microsoft.DesktopVirtualization/workspaces@2023-09-05' = {
+resource workspace 'Microsoft.DesktopVirtualization/workspaces@2025-11-01-preview' = {
   name: '${prefix}-ws'
   location: location
   tags: tags
   properties: {
     friendlyName: 'AVD Lab Workspace'
+    publicNetworkAccess: 'Enabled'
     applicationGroupReferences: [
       appGroup.id
     ]
@@ -411,7 +427,7 @@ resource vmUserLoginRbac 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
 // Retrieve the host pool registration token (needed by the AVD agent extension)
 var hostPoolToken = first(hostPool.listRegistrationTokens().value).token
 
-resource sessionHosts 'Microsoft.Compute/virtualMachines@2023-09-01' = [for i in range(0, vmCount): {
+resource sessionHosts 'Microsoft.Compute/virtualMachines@2025-04-01' = [for i in range(0, vmCount): {
   name: '${prefix}-vm-${i}'
   location: location
   tags: tags
@@ -422,24 +438,37 @@ resource sessionHosts 'Microsoft.Compute/virtualMachines@2023-09-01' = [for i in
     hardwareProfile: {
       vmSize: vmSize
     }
+    additionalCapabilities: {
+      hibernationEnabled: false
+    }
     storageProfile: {
-      imageReference: {
-        id: goldenImageId     // Your pre-built golden image
+      imageReference: empty(goldenImageId) ? {
+        publisher: 'microsoftwindowsdesktop'
+        offer: 'windows-11'
+        sku: 'win11-25h2-avd'
+        version: 'latest'
+      } : {
+        id: goldenImageId
       }
       osDisk: {
         createOption: 'FromImage'
-        managedDisk: { storageAccountType: 'Premium_LRS' }
-        deleteOption: 'Delete'  // Clean up disk when VM is deleted
+        caching: 'ReadWrite'
+        managedDisk: { storageAccountType: 'StandardSSD_LRS' }
+        deleteOption: 'Delete'
+        diskSizeGB: 128
       }
+      diskControllerType: 'NVMe'
     }
     osProfile: {
       computerName: '${prefix}-vm-${i}'
       adminUsername: vmAdminUsername
       adminPassword: vmAdminPassword
       windowsConfiguration: {
-        enableAutomaticUpdates: false   // Managed via Intune/WUfB
+        provisionVMAgent: true
+        enableAutomaticUpdates: true
         patchSettings: {
-          patchMode: 'Manual'           // AutomaticByPlatform requires a supported marketplace image
+          patchMode: 'AutomaticByOS'
+          assessmentMode: 'ImageDefault'
         }
       }
     }
@@ -448,16 +477,16 @@ resource sessionHosts 'Microsoft.Compute/virtualMachines@2023-09-01' = [for i in
         { id: vmNics[i].id, properties: { deleteOption: 'Delete' } }
       ]
     }
-    securityProfile: {
+    securityProfile: vmSecurityType == 'TrustedLaunch' ? {
       securityType: 'TrustedLaunch'
       uefiSettings: {
         secureBootEnabled: true
         vTpmEnabled: true
       }
-    }
+    } : {}
     licenseType: 'Windows_Client'   // Enables Azure Hybrid Benefit for W10/W11 multi-session
     diagnosticsProfile: {
-      bootDiagnostics: { enabled: true }
+      bootDiagnostics: { enabled: false }
     }
   }
 }]
@@ -537,7 +566,7 @@ resource entraJoinExtension 'Microsoft.Compute/virtualMachines/extensions@2023-0
 }]
 
 // 17. AVD Agent (DSC extension registers the VM with the Host Pool)
-resource avdAgentExtension 'Microsoft.Compute/virtualMachines/extensions@2023-09-01' = [for i in range(0, vmCount): {
+resource avdAgentExtension 'Microsoft.Compute/virtualMachines/extensions@2025-04-01' = [for i in range(0, vmCount): {
   name: '${prefix}-vm-${i}/Microsoft.PowerShell.DSC'
   location: location
   tags: tags
@@ -548,12 +577,24 @@ resource avdAgentExtension 'Microsoft.Compute/virtualMachines/extensions@2023-09
     typeHandlerVersion: '2.73'
     autoUpgradeMinorVersion: true
     settings: {
-      modulesUrl: 'https://wvdportalstorageblob.blob.${environment().suffixes.storage}/galleryartifacts/Configuration_09-08-2022.zip'
+      modulesUrl: 'https://wvdportalstorageblob.blob.${environment().suffixes.storage}/galleryartifacts/Configuration_1.0.03355.1216.zip'
       configurationFunction: 'Configuration.ps1\\AddSessionHost'
       properties: {
         hostPoolName: hostPool.name
-        registrationInfoToken: hostPoolToken
-        aadJoin: true                 // Tells DSC this is an Entra-only join (no AD DS)
+        registrationInfoTokenCredential: {
+          UserName: 'PLACEHOLDER_DO_NOT_USE'
+          Password: 'PrivateSettingsRef:RegistrationInfoToken'
+        }
+        aadJoin: true
+        UseAgentDownloadEndpoint: true
+        aadJoinPreview: false
+        mdmId: '0000000a-0000-0000-c000-000000000000'
+        sessionHostConfigurationLastUpdateTime: ''
+      }
+    }
+    protectedSettings: {
+      items: {
+        RegistrationInfoToken: hostPoolToken
       }
     }
   }

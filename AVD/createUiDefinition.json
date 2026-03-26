@@ -53,14 +53,13 @@
           {
             "name": "goldenImageId",
             "type": "Microsoft.Common.TextBox",
-            "label": "Golden image resource ID",
-            "toolTip": "The full resource ID of your Managed Image or Shared Image Gallery version.",
+            "label": "Golden image resource ID (optional)",
+            "toolTip": "Leave blank to use the latest Windows 11 25H2 AVD marketplace image. Or paste the full resource ID of a custom Managed Image or SIG version.",
             "placeholder": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-images/providers/Microsoft.Compute/images/avd-golden-image",
             "constraints": {
-              "required": true,
-              "regex": "^/subscriptions/[0-9a-fA-F-]{36}/resourceGroups/.+/providers/Microsoft\\.Compute/.+$",
-              "validationMessage": "Must be a valid Azure resource ID for a Compute image or gallery image version."
-            }
+              "required": false
+            },
+            "defaultValue": ""
           },
           {
             "name": "vmCount",
@@ -86,6 +85,26 @@
                 {
                   "label": "4",
                   "value": 4
+                }
+              ]
+            }
+          },
+          {
+            "name": "vmSecurityType",
+            "type": "Microsoft.Common.DropDown",
+            "label": "VM security type",
+            "defaultValue": "Trusted Launch",
+            "toolTip": "Must match the security type of your golden image. Use Standard if your image was built on a standard VM.",
+            "constraints": {
+              "required": true,
+              "allowedValues": [
+                {
+                  "label": "Trusted Launch (recommended)",
+                  "value": "TrustedLaunch"
+                },
+                {
+                  "label": "Standard",
+                  "value": "Standard"
                 }
               ]
             }
@@ -488,7 +507,8 @@
       "enableMonitoring": "[steps('monitoring').enableMonitoring]",
       "logAnalyticsWorkspaceName": "[steps('monitoring').logAnalyticsWorkspaceName]",
       "logRetentionDays": "[steps('monitoring').logRetentionDays]",
-      "alertEmailAddress": "[steps('monitoring').alertEmailAddress]"
+      "alertEmailAddress": "[steps('monitoring').alertEmailAddress]",
+      "vmSecurityType": "[steps('sessionHosts').vmSecurityType]"
     }
   }
 }

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "5062000931183924456"
+      "templateHash": "12743330934564365112"
     }
   },
   "parameters": {
@@ -18,7 +18,8 @@
       "defaultValue": "avd-lab"
     },
     "goldenImageId": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": ""
     },
     "vmAdminUsername": {
       "type": "string",
@@ -41,6 +42,14 @@
     "vmCount": {
       "type": "int",
       "defaultValue": 2
+    },
+    "vmSecurityType": {
+      "type": "string",
+      "defaultValue": "TrustedLaunch",
+      "allowedValues": [
+        "TrustedLaunch",
+        "Standard"
+      ]
     },
     "storageAccountSku": {
       "type": "string",
@@ -402,27 +411,37 @@
     },
     {
       "type": "Microsoft.DesktopVirtualization/hostPools",
-      "apiVersion": "2023-09-05",
+      "apiVersion": "2025-11-01-preview",
       "name": "[format('{0}-hp', parameters('prefix'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
       "properties": {
         "hostPoolType": "Pooled",
         "loadBalancerType": "BreadthFirst",
         "maxSessionLimit": 10,
         "preferredAppGroupType": "Desktop",
-        "customRdpProperty": "enablerdsaadauth:i:1;targetisaadjoined:i:1;drivestoredirect:s:;",
+        "customRdpProperty": "drivestoredirect:s:;usbdevicestoredirect:s:;redirectclipboard:i:1;redirectprinters:i:0;audiomode:i:2;videoplaybackmode:i:1;devicestoredirect:s:*;redirectcomports:i:1;redirectsmartcards:i:1;enablecredsspsupport:i:1;redirectwebauthn:i:1;use multimon:i:1;targetisaadjoined:i:1;enablerdsaadauth:i:1;audiocapturemode:i:0;encode redirected video capture:i:0;",
         "startVMOnConnect": true,
+        "allowRDPShortPathWithPrivateLink": "Disabled",
+        "publicNetworkAccess": "Enabled",
+        "managedPrivateUDP": "Default",
+        "directUDP": "Default",
+        "publicUDP": "Default",
+        "relayUDP": "Default",
+        "validationEnvironment": false,
         "registrationInfo": {
           "expirationTime": "[variables('registrationTokenExpiry')]",
           "registrationTokenOperation": "Update"
         },
-        "vmTemplate": "[format('{{\"domain\":\"\",\"galleryImageOffer\":null,\"galleryImagePublisher\":null,\"galleryImageSKU\":null,\"imageType\":\"CustomImage\",\"imageUri\":null,\"customImageId\":\"{0}\",\"namePrefix\":\"{1}-vm\",\"osDiskType\":\"Premium_LRS\",\"vmSize\":{{\"id\":\"{2}\",\"cores\":4,\"ram\":16}},\"galleryItemId\":null,\"hibernate\":false,\"diskSizeGB\":0,\"securityType\":\"trustedLaunch\",\"secureBoot\":true,\"vTPM\":true}}', parameters('goldenImageId'), parameters('prefix'), parameters('vmSize'))]"
+        "vmTemplate": "[format('{{\"namePrefix\":\"{0}-vm\",\"hibernate\":false,\"osDiskType\":\"StandardSSD_LRS\",\"diskSizeGB\":128,\"securityType\":\"{1}\",\"secureBoot\":{2},\"vTPM\":{3},\"vmInfrastructureType\":\"Cloud\"}}', parameters('prefix'), if(equals(parameters('vmSecurityType'), 'TrustedLaunch'), 'TrustedLaunch', 'Standard'), if(equals(parameters('vmSecurityType'), 'TrustedLaunch'), 'true', 'false'), if(equals(parameters('vmSecurityType'), 'TrustedLaunch'), 'true', 'false'))]"
       }
     },
     {
       "type": "Microsoft.DesktopVirtualization/applicationGroups",
-      "apiVersion": "2023-09-05",
+      "apiVersion": "2025-11-01-preview",
       "name": "[format('{0}-dag', parameters('prefix'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
@@ -437,12 +456,13 @@
     },
     {
       "type": "Microsoft.DesktopVirtualization/workspaces",
-      "apiVersion": "2023-09-05",
+      "apiVersion": "2025-11-01-preview",
       "name": "[format('{0}-ws', parameters('prefix'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "properties": {
         "friendlyName": "AVD Lab Workspace",
+        "publicNetworkAccess": "Enabled",
         "applicationGroupReferences": [
           "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-dag', parameters('prefix')))]"
         ]
@@ -489,7 +509,7 @@
         "count": "[length(range(0, parameters('vmCount')))]"
       },
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2023-09-01",
+      "apiVersion": "2025-04-01",
       "name": "[format('{0}-vm-{1}', parameters('prefix'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
@@ -500,26 +520,32 @@
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },
+        "additionalCapabilities": {
+          "hibernationEnabled": false
+        },
         "storageProfile": {
-          "imageReference": {
-            "id": "[parameters('goldenImageId')]"
-          },
+          "imageReference": "[if(empty(parameters('goldenImageId')), createObject('publisher', 'microsoftwindowsdesktop', 'offer', 'windows-11', 'sku', 'win11-25h2-avd', 'version', 'latest'), createObject('id', parameters('goldenImageId')))]",
           "osDisk": {
             "createOption": "FromImage",
+            "caching": "ReadWrite",
             "managedDisk": {
-              "storageAccountType": "Premium_LRS"
+              "storageAccountType": "StandardSSD_LRS"
             },
-            "deleteOption": "Delete"
-          }
+            "deleteOption": "Delete",
+            "diskSizeGB": 128
+          },
+          "diskControllerType": "NVMe"
         },
         "osProfile": {
           "computerName": "[format('{0}-vm-{1}', parameters('prefix'), range(0, parameters('vmCount'))[copyIndex()])]",
           "adminUsername": "[parameters('vmAdminUsername')]",
           "adminPassword": "[parameters('vmAdminPassword')]",
           "windowsConfiguration": {
-            "enableAutomaticUpdates": false,
+            "provisionVMAgent": true,
+            "enableAutomaticUpdates": true,
             "patchSettings": {
-              "patchMode": "Manual"
+              "patchMode": "AutomaticByOS",
+              "assessmentMode": "ImageDefault"
             }
           }
         },
@@ -533,17 +559,11 @@
             }
           ]
         },
-        "securityProfile": {
-          "securityType": "TrustedLaunch",
-          "uefiSettings": {
-            "secureBootEnabled": true,
-            "vTpmEnabled": true
-          }
-        },
+        "securityProfile": "[if(equals(parameters('vmSecurityType'), 'TrustedLaunch'), createObject('securityType', 'TrustedLaunch', 'uefiSettings', createObject('secureBootEnabled', true(), 'vTpmEnabled', true())), createObject())]",
         "licenseType": "Windows_Client",
         "diagnosticsProfile": {
           "bootDiagnostics": {
-            "enabled": true
+            "enabled": false
           }
         }
       },
@@ -630,7 +650,7 @@
         "count": "[length(range(0, parameters('vmCount')))]"
       },
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "apiVersion": "2023-09-01",
+      "apiVersion": "2025-04-01",
       "name": "[format('{0}-vm-{1}/Microsoft.PowerShell.DSC', parameters('prefix'), range(0, parameters('vmCount'))[copyIndex()])]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
@@ -640,12 +660,24 @@
         "typeHandlerVersion": "2.73",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "modulesUrl": "[format('https://wvdportalstorageblob.blob.{0}/galleryartifacts/Configuration_09-08-2022.zip', environment().suffixes.storage)]",
+          "modulesUrl": "[format('https://wvdportalstorageblob.blob.{0}/galleryartifacts/Configuration_1.0.03355.1216.zip', environment().suffixes.storage)]",
           "configurationFunction": "Configuration.ps1\\AddSessionHost",
           "properties": {
             "hostPoolName": "[format('{0}-hp', parameters('prefix'))]",
-            "registrationInfoToken": "[first(listRegistrationTokens(resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-hp', parameters('prefix'))), '2023-09-05').value).token]",
-            "aadJoin": true
+            "registrationInfoTokenCredential": {
+              "UserName": "PLACEHOLDER_DO_NOT_USE",
+              "Password": "PrivateSettingsRef:RegistrationInfoToken"
+            },
+            "aadJoin": true,
+            "UseAgentDownloadEndpoint": true,
+            "aadJoinPreview": false,
+            "mdmId": "0000000a-0000-0000-c000-000000000000",
+            "sessionHostConfigurationLastUpdateTime": ""
+          }
+        },
+        "protectedSettings": {
+          "items": {
+            "RegistrationInfoToken": "[first(listRegistrationTokens(resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-hp', parameters('prefix'))), '2025-11-01-preview').value).token]"
           }
         }
       },

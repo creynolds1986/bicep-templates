@@ -8,11 +8,15 @@
 $resourceGroupName         = 'AVDLab'
 $location                  = 'uksouth'
 $prefix                    = 'avd-lab'
-$goldenImageId             = '/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Compute/images/<image-name>'
+$goldenImageId             = ''   # Leave blank to use latest Windows 11 25H2 AVD marketplace image
+                                    # Or supply a resource ID for a custom Managed Image or SIG version
 $vmAdminUsername           = 'avdadmin'
 $avdUsersGroupId           = '<object-id-of-avd-users-group>'
 $vmSize                    = 'Standard_D2as_v6'
 $vmCount                   = 2
+$vmSecurityType            = 'TrustedLaunch' # Use 'Standard' if your golden image was built on a standard (non-Trusted Launch) VM
+                                              # Note: Using 'Standard' requires the Microsoft.Compute/UseStandardSecurityType
+                                              # feature to be registered on your subscription - this script handles that automatically
 $storageAccountSku         = 'Premium_LRS'
 $fslogixProfileSizeGB      = 20
 $fslogixUserCount          = 4
@@ -40,6 +44,30 @@ if (-not (Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyCont
 }
 
 # -----------------------------------------------
+# Register Standard security type feature if needed
+# -----------------------------------------------
+if ($vmSecurityType -eq 'Standard') {
+    Write-Output 'Checking Microsoft.Compute/UseStandardSecurityType feature registration...'
+    $feature = Get-AzProviderFeature -FeatureName 'UseStandardSecurityType' -ProviderNamespace 'Microsoft.Compute'
+    
+    if ($feature.RegistrationState -ne 'Registered') {
+        Write-Output 'Registering Microsoft.Compute/UseStandardSecurityType feature...'
+        Register-AzProviderFeature -FeatureName 'UseStandardSecurityType' -ProviderNamespace 'Microsoft.Compute'
+        
+        Write-Output 'Waiting for feature registration to complete...'
+        do {
+            Start-Sleep -Seconds 15
+            $feature = Get-AzProviderFeature -FeatureName 'UseStandardSecurityType' -ProviderNamespace 'Microsoft.Compute'
+            Write-Output ('Current state: ' + $feature.RegistrationState)
+        } while ($feature.RegistrationState -ne 'Registered')
+        
+        Write-Output 'Feature registered successfully'
+    } else {
+        Write-Output 'Feature already registered - continuing'
+    }
+}
+
+# -----------------------------------------------
 # Deploy
 # -----------------------------------------------
 $securePassword = Read-Host -Prompt 'VM Admin Password' -AsSecureString
@@ -55,6 +83,7 @@ New-AzResourceGroupDeployment `
   -avdUsersGroupId $avdUsersGroupId `
   -vmSize $vmSize `
   -vmCount $vmCount `
+  -vmSecurityType $vmSecurityType `
   -storageAccountSku $storageAccountSku `
   -fslogixProfileSizeGB $fslogixProfileSizeGB `
   -fslogixUserCount $fslogixUserCount `
