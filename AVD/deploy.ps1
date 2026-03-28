@@ -14,6 +14,7 @@ $vmAdminUsername           = 'avdadmin'
 $avdUsersGroupId           = '<object-id-of-avd-users-group>'
 $vmSize                    = 'Standard_D2as_v6'
 $vmCount                   = 2
+$enrollInIntune            = $true    # Set to $false to skip Intune enrollment - also requires security defaults to be disabled in Entra ID
 $vmSecurityType            = 'TrustedLaunch' # Use 'Standard' if your golden image was built on a standard (non-Trusted Launch) VM
                                               # Note: Using 'Standard' requires the Microsoft.Compute/UseStandardSecurityType
                                               # feature to be registered on your subscription - this script handles that automatically
@@ -83,6 +84,7 @@ New-AzResourceGroupDeployment `
   -avdUsersGroupId $avdUsersGroupId `
   -vmSize $vmSize `
   -vmCount $vmCount `
+  -enrollInIntune $enrollInIntune `
   -vmSecurityType $vmSecurityType `
   -storageAccountSku $storageAccountSku `
   -fslogixProfileSizeGB $fslogixProfileSizeGB `

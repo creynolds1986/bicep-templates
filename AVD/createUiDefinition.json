@@ -181,6 +181,26 @@
             "options": {
               "hideConfirmation": false
             }
+          },
+          {
+            "name": "enrollInIntune",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Enroll in Intune",
+            "defaultValue": "Yes",
+            "toolTip": "Enroll session hosts into Intune during deployment. Requires security defaults to be disabled in Entra ID and an AVD Devices group to be created.",
+            "constraints": {
+              "required": true,
+              "allowedValues": [
+                {
+                  "label": "Yes",
+                  "value": true
+                },
+                {
+                  "label": "No",
+                  "value": false
+                }
+              ]
+            }
           }
         ]
       },
@@ -508,7 +528,8 @@
       "logAnalyticsWorkspaceName": "[steps('monitoring').logAnalyticsWorkspaceName]",
       "logRetentionDays": "[steps('monitoring').logRetentionDays]",
       "alertEmailAddress": "[steps('monitoring').alertEmailAddress]",
-      "vmSecurityType": "[steps('sessionHosts').vmSecurityType]"
+      "vmSecurityType": "[steps('sessionHosts').vmSecurityType]",
+      "enrollInIntune": "[steps('sessionHosts').enrollInIntune]"
     }
   }
 }

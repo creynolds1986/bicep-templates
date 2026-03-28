@@ -30,6 +30,10 @@ param avdUsersGroupId string
 param vmSize string = 'Standard_D4s_v5'
 param vmCount int = 2
 
+// Intune enrollment - set to false to skip Intune enrollment during Entra join
+@description('Enroll session hosts into Intune during deployment. Requires security defaults to be disabled in Entra ID.')
+param enrollInIntune bool = true
+
 // VM security type - must match the security type of your golden image
 // Use 'TrustedLaunch' for images built on Trusted Launch VMs
 // Use 'Standard' for images built on standard VMs
@@ -560,7 +564,7 @@ resource entraJoinExtension 'Microsoft.Compute/virtualMachines/extensions@2023-0
     typeHandlerVersion: '2.0'
     autoUpgradeMinorVersion: true
     settings: {
-      mdmId: '0000000a-0000-0000-c000-000000000000'  // Microsoft Intune MDM app ID - triggers Intune enrolment during Entra join
+      mdmId: enrollInIntune ? '0000000a-0000-0000-c000-000000000000' : ''  // Intune MDM app ID - empty string skips enrollment
     }
   }
 }]
@@ -588,7 +592,7 @@ resource avdAgentExtension 'Microsoft.Compute/virtualMachines/extensions@2025-04
         aadJoin: true
         UseAgentDownloadEndpoint: true
         aadJoinPreview: false
-        mdmId: '0000000a-0000-0000-c000-000000000000'
+        mdmId: enrollInIntune ? '0000000a-0000-0000-c000-000000000000' : ''
         sessionHostConfigurationLastUpdateTime: ''
       }
     }

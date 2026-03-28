@@ -49,8 +49,8 @@ Before deploying, ensure you have:
 
 1. **A golden VM image** — optional. Leave `goldenImageId` blank to use the latest **Windows 11 25H2 AVD** marketplace image directly, which is the recommended approach. Alternatively supply a Managed Image or Shared Image Gallery version resource ID to use a custom image. If using a custom image, FSLogix will be installed automatically if not already present
 2. **AVD Users** — an Entra ID security group containing your AVD users
-3. **AVD Devices** — an Entra ID security group for Intune policy targeting (no action needed at deploy time)
-4. **Security defaults disabled** — Entra ID security defaults must be disabled before deploying. Security defaults enforce MFA for all users which blocks Intune auto-enrollment as the enrollment process cannot complete an MFA challenge programmatically. Disable via **Entra ID > Properties > Manage security defaults**. For production environments use Conditional Access policies instead to enforce MFA selectively
+3. **AVD Devices** *(optional — only required if using Intune)* — an Entra ID security group for Intune policy targeting. The session hosts are automatically added to this group on deployment
+4. **Security defaults disabled** *(optional — only required if using Intune)* — Entra ID security defaults must be disabled before deploying if Intune enrollment is enabled. Security defaults enforce MFA for all users which blocks Intune auto-enrollment as the enrollment process cannot complete an MFA challenge programmatically. Disable via **Entra ID > Properties > Manage security defaults**. For production environments use Conditional Access policies instead to enforce MFA selectively
 
 That's it — no post-deployment configuration is required.
 
@@ -97,6 +97,7 @@ The following parameters are optional and have sensible defaults:
 | `location` | `uksouth` | Azure region to deploy into |
 | `vmCount` | `2` | Number of session host VMs to deploy |
 | `vmSize` | `Standard_D2as_v6` | Size of each session host VM |
+| `enrollInIntune` | `true` | Set to `false` to skip Intune enrollment — if `true`, security defaults must be disabled in Entra ID |
 | `vmSecurityType` | `TrustedLaunch` | Must match your golden image — use `Standard` if built on a standard VM |
 | `vmAdminUsername` | `avdadmin` | Local admin username on each session host |
 | `storageAccountSku` | `Premium_LRS` | Storage redundancy — use `Premium_ZRS` for zone redundancy |

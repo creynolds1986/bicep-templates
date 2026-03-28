@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "1957007110913078509"
+      "templateHash": "17103158302991196806"
     }
   },
   "parameters": {
@@ -42,6 +42,13 @@
     "vmCount": {
       "type": "int",
       "defaultValue": 2
+    },
+    "enrollInIntune": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enroll session hosts into Intune during deployment. Requires security defaults to be disabled in Entra ID."
+      }
     },
     "vmSecurityType": {
       "type": "string",
@@ -637,7 +644,7 @@
         "typeHandlerVersion": "2.0",
         "autoUpgradeMinorVersion": true,
         "settings": {
-          "mdmId": "0000000a-0000-0000-c000-000000000000"
+          "mdmId": "[if(parameters('enrollInIntune'), '0000000a-0000-0000-c000-000000000000', '')]"
         }
       },
       "dependsOn": [
@@ -671,7 +678,7 @@
             "aadJoin": true,
             "UseAgentDownloadEndpoint": true,
             "aadJoinPreview": false,
-            "mdmId": "0000000a-0000-0000-c000-000000000000",
+            "mdmId": "[if(parameters('enrollInIntune'), '0000000a-0000-0000-c000-000000000000', '')]",
             "sessionHostConfigurationLastUpdateTime": ""
           }
         },
