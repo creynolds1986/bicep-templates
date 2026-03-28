@@ -8,7 +8,7 @@ A fully automated Azure Virtual Desktop environment deployable either from the *
 
 ## Architecture
 
-![AVD Lab Resource Map](diagrams/AVDTest.png)
+![AVD Lab Resource Map](Diagrams/AVDTest.png)
 
 ---
 
