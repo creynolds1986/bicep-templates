@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "14152118337365691926"
+      "templateHash": "17423526931999241198"
     }
   },
   "parameters": {
@@ -452,6 +452,17 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.DesktopVirtualization/hostPools', format('{0}-hp', parameters('prefix')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DesktopVirtualization/applicationGroups/desktops",
+      "apiVersion": "2025-11-01-preview",
+      "name": "[format('{0}/SessionDesktop', format('{0}-dag', parameters('prefix')))]",
+      "properties": {
+        "friendlyName": "AVD Lab Desktop"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DesktopVirtualization/applicationGroups', format('{0}-dag', parameters('prefix')))]"
       ]
     },
     {

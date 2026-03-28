@@ -379,6 +379,15 @@ resource appGroup 'Microsoft.DesktopVirtualization/applicationGroups@2025-11-01-
   }
 }
 
+// 13a. Desktop application friendly name
+//      Sets the display name shown in the Windows App for the desktop session
+resource desktopApplication 'Microsoft.DesktopVirtualization/applicationGroups/desktops@2025-11-01-preview' = {
+  name: '${appGroup.name}/SessionDesktop'
+  properties: {
+    friendlyName: 'AVD Lab Desktop'
+  }
+}
+
 // 14. Workspace
 resource workspace 'Microsoft.DesktopVirtualization/workspaces@2025-11-01-preview' = {
   name: '${prefix}-ws'
