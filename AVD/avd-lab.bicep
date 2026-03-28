@@ -560,7 +560,7 @@ resource entraJoinExtension 'Microsoft.Compute/virtualMachines/extensions@2023-0
     typeHandlerVersion: '2.0'
     autoUpgradeMinorVersion: true
     settings: {
-      mdmId: ''  // Empty string = Entra join without MDM enrolment
+      mdmId: '0000000a-0000-0000-c000-000000000000'  // Microsoft Intune MDM app ID - triggers Intune enrolment during Entra join
     }
   }
 }]
@@ -664,21 +664,6 @@ resource fslogixConfigRunCommand 'Microsoft.Compute/virtualMachines/runCommands@
         $credential = New-Object System.Management.Automation.PSCredential("AZURE\$StorageAccountName", $secureKey)
         cmdkey /add:$credTarget /user:("AZURE\" + $StorageAccountName) /pass:$StorageAccountKey
         Write-Output ('Storage account key credential stored for: ' + $credTarget)
-
-        # ---- Intune enrolment trigger ----
-        # Attempts to trigger MDM enrolment - continues if it fails
-        try {
-          Write-Output 'Attempting Intune MDM enrolment...'
-          $enrollPath = 'C:\Windows\System32\DeviceEnroller.exe'
-          if (Test-Path $enrollPath) {
-            Start-Process -FilePath $enrollPath -ArgumentList '/c /AutoEnrollMDM' -Wait -NoNewWindow
-            Write-Output 'Intune enrolment triggered successfully'
-          } else {
-            Write-Output 'DeviceEnroller.exe not found - skipping Intune enrolment'
-          }
-        } catch {
-          Write-Output ('Intune enrolment failed but continuing: ' + $_.Exception.Message)
-        }
 
         # ---- Suppress Entra ID 'Allow Remote Desktop' consent prompt ----
         $RdpPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
