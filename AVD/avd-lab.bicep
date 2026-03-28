@@ -665,20 +665,6 @@ resource fslogixConfigRunCommand 'Microsoft.Compute/virtualMachines/runCommands@
         cmdkey /add:$credTarget /user:("AZURE\" + $StorageAccountName) /pass:$StorageAccountKey
         Write-Output ('Storage account key credential stored for: ' + $credTarget)
 
-        # ---- Clean up phantom enrollment records before triggering Intune enrollment ----
-        # These empty Type 1 records are created by the Entra join process and block fresh enrollment
-        $enrollmentPath = 'HKLM:\SOFTWARE\Microsoft\Enrollments'
-        $keysToKeep = @('Context', 'Status', 'ValidNodePaths')
-        $removed = 0
-        Get-ChildItem $enrollmentPath | Where-Object { $keysToKeep -notcontains $_.PSChildName } | ForEach-Object {
-          $props = Get-ItemProperty $_.PSPath
-          if ([string]::IsNullOrEmpty($props.ProviderID) -and [string]::IsNullOrEmpty($props.UPN)) {
-            Remove-Item $_.PSPath -Recurse -Force
-            $removed++
-          }
-        }
-        Write-Output ('Removed ' + $removed + ' phantom enrollment records')
-
         # ---- Intune enrolment trigger ----
         # Attempts to trigger MDM enrolment - continues if it fails
         try {
