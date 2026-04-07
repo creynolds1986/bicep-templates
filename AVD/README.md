@@ -39,8 +39,6 @@ A fully automated Azure Virtual Desktop environment deployable either from the *
 
 This deployment uses **storage account key authentication** for FSLogix profile containers. The storage account key is automatically retrieved at deploy time and stored in Windows Credential Manager on each session host — no manual steps required after deployment.
 
-> **Note:** For production environments, Entra Kerberos authentication is recommended as it uses identity-based access rather than a shared key. It is not implemented in this lab because it requires Windows Hello for Business or FIDO2 passkeys to be configured — password-based sign-in is not supported with Entra Kerberos for Azure Files. This will be available as an optional deployment in a future update to this repository.
-
 ---
 
 ## Pre-requisites
