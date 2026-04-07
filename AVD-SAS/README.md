@@ -1,8 +1,10 @@
-# AVD Lab — Bicep Deployment
+# AVD Lab — Bicep Deployment (Storage Account Key Authentication)
 
 A fully automated Azure Virtual Desktop environment deployable either from the **Azure Portal** (wizard UI) or via **PowerShell** (code). Built as a portfolio piece to demonstrate end-to-end AVD infrastructure as code.
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD%2Favd-lab.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD%2FcreateUiDefinition.json)
+This version uses **storage account key authentication** for FSLogix profile containers, which allows full NTFS ACL-based access control at the directory and file level. For a version using Entra Kerberos identity-based authentication instead, see the [AVD-Entra](../AVD-Entra) template.
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD-SAS%2Favd-lab.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fcreynolds1986%2Fbicep-templates%2Fmain%2FAVD-SAS%2FcreateUiDefinition.json)
 
 ---
 
@@ -38,6 +40,10 @@ A fully automated Azure Virtual Desktop environment deployable either from the *
 ## FSLogix authentication
 
 This deployment uses **storage account key authentication** for FSLogix profile containers. The storage account key is automatically retrieved at deploy time and stored in Windows Credential Manager on each session host — no manual steps required after deployment.
+
+The key advantage of this approach over Entra Kerberos is full support for NTFS ACL-based access control at the directory and file level, allowing granular permissions to be set on folders and files within the share using Entra users and groups.
+
+See the [AVD-Entra](../AVD-Entra) template for a version using Entra Kerberos identity-based authentication, and a comparison of the trade-offs between the two approaches.
 
 ---
 
