@@ -1,7 +1,12 @@
 param(
     [string]$resourceGroupName  = "rg-yourname",
     [string]$storageAccountName = "yourStorageAccount",
-    [string]$bicepFilePath      = ".\ProV2.bicep"
+    [string]$bicepFilePath      = ".\ProV2.bicep",
+    [string]$fileShareName      = "sharename",
+    [int]$fileShareSize         = 32,
+    [int]$fileShareIops         = 3000,
+    [int]$fileShareThroughput   = 100,
+    [bool]$deployFileShare      = $true
 )
 
 #region Check / Connect Azure
@@ -10,7 +15,7 @@ if (-not $azContext) {
     Write-Host "No Azure connection found. Connecting..." -ForegroundColor Yellow
     Connect-AzAccount
 } else {
-    Write-Host "Already connected to Azure as $($azContext.Account.Id)" -ForegroundColor Green
+    Write-Host "Already connected to Azure as $($azContext.Account.Id) (Tenant: $($azContext.Tenant.Id))" -ForegroundColor Green
 }
 #endregion
 
@@ -27,7 +32,7 @@ if (-not $graphContext) {
         Write-Host "Graph connected but missing scopes: $($missingScopes -join ', '). Reconnecting..." -ForegroundColor Yellow
         Connect-MgGraph -Scopes $requiredScopes
     } else {
-        Write-Host "Already connected to Graph as $($graphContext.Account)" -ForegroundColor Green
+        Write-Host "Already connected to Graph as $($graphContext.Account) (Tenant: $($graphContext.TenantId))" -ForegroundColor Green
     }
 }
 #endregion
@@ -38,6 +43,11 @@ New-AzResourceGroupDeployment `
     -ResourceGroupName $resourceGroupName `
     -TemplateFile $bicepFilePath `
     -storageAccount_name $storageAccountName `
+    -fileShare_name $fileShareName `
+    -fileShare_size $fileShareSize `
+    -fileShare_iops $fileShareIops `
+    -fileShare_throughput $fileShareThroughput `
+    -deployFileShare $deployFileShare `
     -Verbose
 #endregion
 
