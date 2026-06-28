@@ -1,6 +1,6 @@
 # FileShareProV2
 
-Deploys an Azure Files Premium V2 storage account with Entra Kerberos authentication, and optionally creates a file share (enabled by default).
+Deploys an Azure Files Premium V2 storage account with Entra Kerberos authentication, and optionally creates a file share (enabled by default). File share size is in GB.
 
 ## Prerequisites
 
@@ -22,16 +22,8 @@ Deploys an Azure Files Premium V2 storage account with Entra Kerberos authentica
 
 ## Usage
 
-Run with defaults:
-
 ```powershell
-.\DeployProV2.ps1
-```
-
-Run with custom values:
-
-```powershell
-.\DeployProV2.ps1 -resourceGroupName "rg-client" -storageAccountName "stclient01"
+.\DeployProV2.ps1 -resourceGroupName "rg-client" -storageAccountName "stclient01" -fileShareName "sharename" -fileShareSize 50
 ```
 
 Skip file share creation:
