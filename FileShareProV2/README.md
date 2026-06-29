@@ -35,7 +35,7 @@ Create new resource group
 Skip file share creation:
 
 ```powershell
-.\DeployProV2.ps1 -deployFileShare $false
+.\DeployProV2.ps1 -resourceGroupName "rg-client" -resourceGroupRegion "westeurope" -storageAccountName "stclient01" -deployFileShare $false
 ```
 
 ## Parameters
