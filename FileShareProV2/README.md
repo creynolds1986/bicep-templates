@@ -6,7 +6,6 @@ Deploys an Azure Files Premium V2 storage account with Entra Kerberos authentica
 
 - Az PowerShell module
 - Microsoft.Graph PowerShell module
-- An existing resource group to deploy into
 
 ## Files
 
@@ -16,14 +15,21 @@ Deploys an Azure Files Premium V2 storage account with Entra Kerberos authentica
 ## What the script does
 
 1. Checks for existing Azure and Graph connections, prompting to connect if not already
-2. Deploys the Bicep template to the specified resource group
+2. Deploys the Bicep template to the specified resource group. If the group doesn't exist, it will create one. You can set the region using $resourceGroupRegion (default is uksouth)
 3. Grants admin consent to the storage account app registration in Entra ID
 4. Adds the `kdc_enable_cloud_group_sids` tag to the app manifest to enable cloud group SID support
 
 ## Usage
 
+Existing resource group
 ```powershell
 .\DeployProV2.ps1 -resourceGroupName "rg-client" -storageAccountName "stclient01" -fileShareName "sharename" -fileShareSize 50
+```
+
+Create new resource group
+
+```powershell
+.\DeployProV2.ps1 -resourceGroupName "rg-client" -resourceGroupRegion "westeurope" -storageAccountName "stclient01" -fileShareName "sharename" -fileShareSize 50
 ```
 
 Skip file share creation:

@@ -7,7 +7,7 @@ param deployFileShare bool = true
 
 resource storageAccount_name_resource 'Microsoft.Storage/storageAccounts@2026-04-01' = {
   name: storageAccount_name
-  location: 'uksouth'
+  location: resourceGroup().location
   sku: {
     name: 'PremiumV2_LRS'
     tier: 'Premium'

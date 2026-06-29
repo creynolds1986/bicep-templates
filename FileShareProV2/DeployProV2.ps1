@@ -1,5 +1,6 @@
 param(
     [string]$resourceGroupName  = "rg-yourname",
+    [string]$resourceGroupRegion = "uksouth",
     [string]$storageAccountName = "yourStorageAccount",
     [string]$bicepFilePath      = ".\ProV2.bicep",
     [string]$fileShareName      = "sharename",
@@ -36,6 +37,15 @@ if (-not $graphContext) {
     }
 }
 #endregion
+
+#check for resource group existence
+$rg = Get-AzResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
+if (-not $rg) {
+    Write-Host "Resource group '$resourceGroupName' does not exist. Creating..." -ForegroundColor Yellow
+    New-AzResourceGroup -Name $resourceGroupName -Location $resourceGroupRegion
+} else {
+    Write-Host "Resource group '$resourceGroupName' already exists." -ForegroundColor Green
+}
 
 #region Deploy Bicep
 Write-Host "Deploying Bicep template..." -ForegroundColor Cyan
