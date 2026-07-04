@@ -2,14 +2,10 @@ param(
     [string]$resourceGroupName  = "rg-yourname",
     [string]$resourceGroupRegion = "uksouth",
     [string]$storageAccountName = "yourStorageAccount",
-    [string]$bicepFilePath      = ".\ProV2.bicep",
+    [string]$bicepFilePath      = ".\PAYG.bicep",
     [string]$fileShareName      = "sharename",
-    [string]$replicationType    = "PremiumV2_LRS",
-    [string]$performanceTier    = "Premium",
-    [int]$fileShareSize         = 32,
-    [int]$fileShareIops         = 3000,
-    [int]$fileShareThroughput   = 100,
-    [bool]$deployFileShare      = $true,
+    [string]$accessTier         = "Hot",
+    [string]$replicationType    = "Standard_LRS",
     [bool]$allowSharedKeyAccess = $false
 )
 
@@ -65,12 +61,8 @@ New-AzResourceGroupDeployment `
     -TemplateFile $bicepFilePath `
     -storageAccount_name $storageAccountName `
     -fileShare_name $fileShareName `
+    -accessTier $accessTier `
     -replicationType $replicationType `
-    -performanceTier $performanceTier `
-    -fileShare_size $fileShareSize `
-    -fileShare_iops $fileShareIops `
-    -fileShare_throughput $fileShareThroughput `
-    -deployFileShare $deployFileShare `
     -allowSharedKeyAccess $allowSharedKeyAccess `
     -Verbose
 #endregion

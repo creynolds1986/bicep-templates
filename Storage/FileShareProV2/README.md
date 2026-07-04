@@ -43,10 +43,22 @@ Skip file share creation:
 | Parameter | Default | Description |
 |---|---|---|
 | resourceGroupName | rg-yourname | Resource group to deploy into |
+| resourceGroupRegion | uksouth | Azure region for the resource group if it needs to be created |
 | storageAccountName | yourStorageAccount | Name of the storage account |
 | bicepFilePath | .\ProV2.bicep | Path to the Bicep template |
 | fileShareName | sharename | Name of the file share |
+| replicationType | PremiumV2_LRS | Storage account SKU replication type. Common values include PremiumV2_LRS, Premium_LRS, Standard_LRS, Standard_GRS |
+| performanceTier | Premium | Storage account performance tier. Use Premium for Premium file shares |
 | fileShareSize | 32 | Share size in GB |
 | fileShareIops | 3000 | Provisioned IOPS |
 | fileShareThroughput | 100 | Provisioned throughput in MiB/s |
 | deployFileShare | true | Whether to create the file share |
+| allowSharedKeyAccess | false | Enables storage account access keys when set to $true |
+
+
+## Available options
+
+- replicationType: Use values supported by the target Azure region and storage SKU availability. For Premium file shares, PremiumV2_LRS is the default choice.
+- performanceTier: Typically Premium for Azure Files Premium / Premium V2 deployments. Standard is only appropriate for non-Premium storage account scenarios.
+- deployFileShare: Set to $false to deploy the storage account without creating a file share.
+- allowSharedKeyAccess: Set to $true to enable storage account access keys; the default is disabled.
