@@ -47,7 +47,7 @@ Skip file share creation:
 | storageAccountName | yourStorageAccount | Name of the storage account |
 | bicepFilePath | .\ProV2.bicep | Path to the Bicep template |
 | fileShareName | sharename | Name of the file share |
-| replicationType | PremiumV2_LRS | Storage account SKU replication type. Common values include PremiumV2_LRS, Premium_LRS, Standard_LRS, Standard_GRS |
+| replicationType | PremiumV2_LRS | Storage account SKU replication type. Supported values include PremiumV2_LRS, Premium_LRS, Premium_ZRS, Standard_LRS, Standard_GRS, Standard_RAGRS, Standard_ZRS, Standard_GZRS, Standard_RAGZRS |
 | performanceTier | Premium | Storage account performance tier. Use Premium for Premium file shares |
 | fileShareSize | 32 | Share size in GB |
 | fileShareIops | 3000 | Provisioned IOPS |
@@ -60,5 +60,6 @@ Skip file share creation:
 
 - replicationType: Use values supported by the target Azure region and storage SKU availability. For Premium file shares, PremiumV2_LRS is the default choice.
 - performanceTier: Typically Premium for Azure Files Premium / Premium V2 deployments. Standard is only appropriate for non-Premium storage account scenarios.
+- Note: The replication type should match the selected performance tier. For example, Premium performance should use Premium replication types such as PremiumV2_LRS or Premium_LRS, while Standard performance should use Standard replication types such as Standard_LRS or Standard_GRS.
 - deployFileShare: Set to $false to deploy the storage account without creating a file share.
 - allowSharedKeyAccess: Set to $true to enable storage account access keys; the default is disabled.

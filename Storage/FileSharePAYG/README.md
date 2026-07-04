@@ -49,11 +49,12 @@ Use a different access tier or replication type
 | bicepFilePath | .\PAYG.bicep | Path to the Bicep template |
 | fileShareName | sharename | Name of the file share |
 | fileShareAccessTier | Hot | File share access tier. Supported values include Hot, Cool, and TransactionOptimized |
-| replicationType | Standard_LRS | Storage account SKU replication type. Common values include Standard_LRS, Standard_GRS, Standard_RAGRS |
+| replicationType | Standard_LRS | Storage account SKU replication type. Supported values include Standard_LRS, Standard_GRS, Standard_RAGRS, Standard_ZRS, Standard_GZRS, Standard_RAGZRS |
 | allowSharedKeyAccess | false | Enables storage account access keys when set to $true |
 
 ## Available options
 
 - fileShareAccessTier: Use `TransactionOptimized` for workloads that benefit from the transaction-optimized file share tier, or choose `Hot` / `Cool` for other scenarios.
 - replicationType: Choose a replication option supported in the target region and required by your durability needs.
+- Note: The replication type should match the selected performance tier. For example, Premium performance should use Premium replication types such as PremiumV2_LRS or Premium_LRS, while Standard performance should use Standard replication types such as Standard_LRS or Standard_GRS.
 - allowSharedKeyAccess: Set to $true to enable storage account access keys; the default is disabled.
