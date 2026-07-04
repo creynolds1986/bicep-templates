@@ -12,8 +12,16 @@ param(
 
 #region Check / Connect Azure
 $azContext = Get-AzContext -ErrorAction SilentlyContinue
-if (-not $azContext) {
-    Write-Host "No Azure connection found. Connecting..." -ForegroundColor Yellow
+$azAccessToken = $null
+
+try {
+    $azAccessToken = Get-AzAccessToken -ErrorAction Stop
+} catch {
+    $azAccessToken = $null
+}
+
+if (-not $azAccessToken -or [string]::IsNullOrWhiteSpace($azAccessToken.Token)) {
+    Write-Host "No valid Azure access token found. Connecting..." -ForegroundColor Yellow
     Connect-AzAccount
 } else {
     Write-Host "Already connected to Azure as $($azContext.Account.Id) (Tenant: $($azContext.Tenant.Id))" -ForegroundColor Green
