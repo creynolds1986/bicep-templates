@@ -4,7 +4,7 @@ param(
     [string]$storageAccountName = "yourStorageAccount",
     [string]$bicepFilePath      = ".\PAYG.bicep",
     [string]$fileShareName      = "sharename",
-    [string]$accessTier         = "Hot",
+    [string]$fileShareAccessTier = "Hot",
     [string]$replicationType    = "Standard_LRS",
     [bool]$allowSharedKeyAccess = $false
 )
@@ -61,7 +61,7 @@ New-AzResourceGroupDeployment `
     -TemplateFile $bicepFilePath `
     -storageAccount_name $storageAccountName `
     -fileShare_name $fileShareName `
-    -accessTier $accessTier `
+    -fileShare_accessTier $fileShareAccessTier `
     -replicationType $replicationType `
     -allowSharedKeyAccess $allowSharedKeyAccess `
     -Verbose

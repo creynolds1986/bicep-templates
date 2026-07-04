@@ -1,6 +1,6 @@
 param storageAccount_name string = 'accountname'
 param fileShare_name string = 'sharename'
-param accessTier string = 'Hot'
+param fileShare_accessTier string = 'Hot'
 param replicationType string = 'Standard_LRS'
 param allowSharedKeyAccess bool = false
 
@@ -51,7 +51,7 @@ resource storageAccount_name_resource 'Microsoft.Storage/storageAccounts@2026-04
       }
       keySource: 'Microsoft.Storage'
     }
-    accessTier: accessTier
+    accessTier: 'Hot'
   }
 }
 
@@ -125,7 +125,7 @@ resource storageAccount_name_default_sharename 'Microsoft.Storage/storageAccount
   parent: Microsoft_Storage_storageAccounts_fileServices_storageAccount_name_default
   name: fileShare_name
   properties: {
-    accessTier: accessTier
+    accessTier: fileShare_accessTier
     shareQuota: 102400
     enabledProtocols: 'SMB'
   }
