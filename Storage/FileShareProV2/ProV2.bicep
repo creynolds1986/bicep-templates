@@ -26,7 +26,7 @@ resource storageAccount_name_resource 'Microsoft.Storage/storageAccounts@2026-04
     allowCrossTenantReplication: false
     azureFilesIdentityBasedAuthentication: {
       smbOAuthSettings: {
-        isSmbOAuthEnabled: true
+        isSmbOAuthEnabled: false
       }
       directoryServiceOptions: 'AADKERB'
     }
